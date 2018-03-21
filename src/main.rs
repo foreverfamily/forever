@@ -3,7 +3,7 @@ extern crate hyper;
 use hyper::header::{ContentLength, ContentType};
 use hyper::server::{Http, Response, const_service, service_fn};
 
-static TEXT: &'static str = "";
+static TEXT: &'static str = "i love you, 慧慧";
 
 fn main() {
     run();
