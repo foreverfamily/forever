@@ -1,24 +1,38 @@
+extern crate futures;
+extern crate futures_cpupool;
+extern crate grpc;
 extern crate hyper;
+extern crate protobuf;
+extern crate tls_api;
 
 use hyper::header::{ContentLength, ContentType};
-use hyper::server::{Http, Response, const_service, service_fn};
+use hyper::server::{const_service, Http, Response, service_fn};
+use protobuf::Message;
+use std::thread;
+
+pub mod proto;
 
 static TEXT: &'static str = "i love you, 慧慧";
 
-fn main() {
-    run();
+struct Love;
+
+impl proto::ServerLove for Love {
+    fn love(&self, o: grpc::RequestOptions, love_you: proto::LoveYou) -> grpc::StreamingResponse<proto::LoveReply> {
+        let mut r = proto::LoveReply::new();
+        r.set_message(TEXT.to_string());
+        println!("req name = {:?}", love_you.get_name());
+        grpc::StreamingResponse::completed(vec![r])
+    }
 }
 
-fn run() -> Result<(), hyper::Error> {
-    let addr = ([127, 0, 0, 1], 3000).into();
+fn main() {
+    let mut server = grpc::ServerBuilder::new_plain();
+    server.http.set_port(3000);
+    server.add_service(proto::ServerLoveServer::new_service_def(Love {}));
 
-    let hello = const_service(service_fn(|_req| {
-        Ok(Response::<hyper::Body>::new()
-            .with_header(ContentLength(TEXT.len() as u64))
-            .with_header(ContentType::plaintext())
-            .with_body(TEXT))
-    }));
-
-    let server = Http::new().bind(&addr, hello)?;
-    server.run()
+    server.http.set_cpu_pool_threads(4);
+    server.build().expect("server");
+    loop {
+        thread::park();
+    }
 }

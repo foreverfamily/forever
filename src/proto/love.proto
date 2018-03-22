@@ -1,0 +1,17 @@
+syntax = "proto3";
+package love;
+
+
+service ServerLove {
+	rpc Love (LoveYou) returns (stream LoveReply) {
+	}
+}
+
+message LoveYou {
+	string name = 1;
+}
+
+
+message LoveReply {
+	string message = 1;
+}
